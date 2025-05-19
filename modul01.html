@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubus Hierarki Ortogonal Three.js</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #333; } /* Latar belakang sedikit lebih gelap */
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // 1. Variabel Global
+        let scene, camera, renderer, parentCube, childCube;
+        const frustumSize = 15; // Ukuran area pandang kamera ortogonal
+
+        function init() {
+            // 2. Scene (Panggung)
+            scene = new THREE.Scene();
+
+            // 3. Camera (Kamera Ortogonal)
+            const aspect = window.innerWidth / window.innerHeight;
+            camera = new THREE.OrthographicCamera(
+                frustumSize * aspect / -2, // left
+                frustumSize * aspect / 2,  // right
+                frustumSize / 2,           // top
+                frustumSize / -2,          // bottom
+                1,                         // near clipping plane
+                1000                       // far clipping plane
+            );
+            camera.position.z = 10; // Mundurkan kamera
+            // camera.lookAt(scene.position); // Kamera melihat ke pusat scene (default)
+
+            // 4. Renderer (Perender)
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // 5. Geometri dan Material (Tanpa Lighting)
+            const parentGeometry = new THREE.BoxGeometry(2, 2, 2); // Kubus induk lebih besar
+            const parentMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Merah
+            parentCube = new THREE.Mesh(parentGeometry, parentMaterial);
+            scene.add(parentCube); // Tambahkan kubus induk ke scene
+
+            const childGeometry = new THREE.BoxGeometry(1, 1, 1); // Kubus anak lebih kecil
+            const childMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // Biru
+            childCube = new THREE.Mesh(childGeometry, childMaterial);
+
+            // Atur posisi kubus anak RELATIF terhadap kubus induk
+            childCube.position.set(2.5, 0, 0); // Geser ke kanan dari pusat kubus induk
+
+            // 6. Membuat Hirarki: Tambahkan kubus anak ke kubus induk
+            parentCube.add(childCube);
+
+            // Menangani perubahan ukuran window
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Mulai animasi
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); // Loop animasi
+
+            // Animasi kubus induk:
+            parentCube.rotation.x += 0.005;
+            parentCube.rotation.y += 0.01;
+
+            // Animasi kubus anak (rotasi lokal):
+            childCube.rotation.x += 0.02;
+            childCube.rotation.z += 0.015;
+
+            // Render scene dengan kamera
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.left = frustumSize * aspect / -2;
+            camera.right = frustumSize * aspect / 2;
+            camera.top = frustumSize / 2;
+            camera.bottom = frustumSize / -2;
+            camera.updateProjectionMatrix(); // Penting untuk kamera ortogonal setelah diubah
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Panggil fungsi init setelah halaman dimuat
+        init();
+    </script>
+</body>
+</html>
