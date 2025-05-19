@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Walkthrough UV Grid</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #instructions {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div id="instructions">Click to start</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+
+<script>
+  // --- Scene Setup ---
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  // --- Lighting ---
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+
+  const pointLight = new THREE.PointLight(0xffffff, 1);
+  pointLight.position.set(0, 5, 5);
+  pointLight.castShadow = true;
+  scene.add(pointLight);
+
+  // --- Texture ---
+  const loader = new THREE.TextureLoader();
+  const uvTexture = loader.load('uvgrid.png');
+
+  // --- Objects ---
+  const objects = [];
+
+  const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100, emissive: 0xffffff, emissiveIntensity: 0.4 }));
+  cube.position.x = -2;
+  cube.castShadow = true;
+  scene.add(cube);
+
+  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.75, 32, 32),
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100 }));
+  sphere.castShadow = true;
+  scene.add(sphere);
+
+  const prism = new THREE.Mesh(new THREE.ConeGeometry(1, 1.5, 3),
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100 }));
+  prism.position.x = 2;
+  prism.castShadow = true;
+  scene.add(prism);
+
+  objects.push(cube, sphere, prism);
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(100, 100),
+    new THREE.MeshPhongMaterial({ map: uvTexture, side: THREE.DoubleSide }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // --- Pointer Lock Setup ---
+  const instructions = document.getElementById('instructions');
+  instructions.addEventListener('click', () => {
+    instructions.style.display = 'none';
+    renderer.domElement.requestPointerLock();
+  });
+
+  // --- Movement Variables ---
+  let velocity = new THREE.Vector3();
+  let direction = new THREE.Vector3();
+  const move = { forward: false, backward: false, left: false, right: false };
+  let pitch = 0;
+  let yaw = 0;
+
+  // --- Mouse Look ---
+  document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === renderer.domElement) {
+      document.addEventListener('mousemove', onMouseMove);
+    } else {
+      document.removeEventListener('mousemove', onMouseMove);
+      instructions.style.display = 'flex';
+    }
+  });
+
+  function onMouseMove(event) {
+    yaw -= event.movementX * 0.002;
+    pitch -= event.movementY * 0.002;
+    pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch));
+    camera.rotation.set(pitch, yaw, 0);
+  }
+
+  // --- WASD Keyboard ---
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyW') move.forward = true;
+    if (e.code === 'KeyS') move.backward = true;
+    if (e.code === 'KeyA') move.left = true;
+    if (e.code === 'KeyD') move.right = true;
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'KeyW') move.forward = false;
+    if (e.code === 'KeyS') move.backward = false;
+    if (e.code === 'KeyA') move.left = false;
+    if (e.code === 'KeyD') move.right = false;
+  });
+
+  // --- Animate Loop ---
+  const clock = new THREE.Clock();
+
+  function animate() {
+    const delta = clock.getDelta();
+    velocity.set(0, 0, 0);
+
+    if (move.forward) velocity.z -= 5 * delta;
+    if (move.backward) velocity.z += 5 * delta;
+    if (move.left) velocity.x -= 5 * delta;
+    if (move.right) velocity.x += 5 * delta;
+
+    direction.copy(velocity).applyEuler(camera.rotation);
+    camera.position.add(direction);
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+
+  // --- Resize ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+
+</body>
+</html>

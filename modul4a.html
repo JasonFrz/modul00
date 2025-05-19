@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UV Grid Phong with Shadows</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+
+<script>
+  // --- Scene Setup ---
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true; // 🟢 Aktifkan shadow map
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // opsional: soft shadow
+  document.body.appendChild(renderer.domElement);
+
+  // --- Lighting ---
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+
+  const pointLight = new THREE.PointLight(0xffffff, 1);
+  pointLight.position.set(0, 5, 5);
+  pointLight.castShadow = true; // 🟢 Lampu bisa melempar bayangan
+  pointLight.shadow.mapSize.width = 1024;
+  pointLight.shadow.mapSize.height = 1024;
+  pointLight.shadow.camera.near = 0.5;
+  pointLight.shadow.camera.far = 20;
+  scene.add(pointLight);
+
+  // --- UV Texture ---
+  const loader = new THREE.TextureLoader();
+  const uvTexture = loader.load('uvgrid.png');
+
+  // --- Cube ---
+  const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshPhongMaterial({
+      map: uvTexture,
+      emissive: new THREE.Color(0xffffff),
+      emissiveIntensity: 0.4,
+      shininess: 100
+    })
+  );
+  cube.position.x = -2;
+  cube.castShadow = true; // 🟢 Melempar bayangan
+  scene.add(cube);
+
+  // --- Sphere ---
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(0.75, 32, 32),
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100 })
+  );
+  sphere.position.x = 0;
+  sphere.castShadow = true; // 🟢 Melempar bayangan
+  scene.add(sphere);
+
+  // --- Prism ---
+  const prism = new THREE.Mesh(
+    new THREE.ConeGeometry(1, 1.5, 3),
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100 })
+  );
+  prism.position.x = 2;
+  prism.castShadow = true; // 🟢 Melempar bayangan
+  scene.add(prism);
+
+  // --- Ground Plane ---
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshPhongMaterial({ map: uvTexture, side: THREE.DoubleSide })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1;
+  ground.receiveShadow = true; // 🟢 Menerima bayangan
+  scene.add(ground);
+
+  // --- Fake Orbit Camera Control ---
+  let isDragging = false;
+  let prevMousePos = { x: 0, y: 0 };
+  let theta = 0;
+  let phi = 0;
+  let radius = 5;
+
+  function updateCameraPosition() {
+    const x = radius * Math.sin(theta) * Math.cos(phi);
+    const z = radius * Math.cos(theta) * Math.cos(phi);
+    const y = radius * Math.sin(phi);
+    camera.position.set(x, y, z);
+    camera.lookAt(0, 0, 0);
+  }
+
+  updateCameraPosition();
+
+  document.addEventListener('mousedown', e => {
+    isDragging = true;
+    prevMousePos.x = e.clientX;
+    prevMousePos.y = e.clientY;
+  });
+
+  document.addEventListener('mouseup', () => isDragging = false);
+
+  document.addEventListener('mousemove', e => {
+    if (isDragging) {
+      const deltaX = e.clientX - prevMousePos.x;
+      const deltaY = e.clientY - prevMousePos.y;
+      theta -= deltaX * 0.005;
+      phi -= deltaY * 0.005;
+      phi = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, phi));
+      prevMousePos.x = e.clientX;
+      prevMousePos.y = e.clientY;
+      updateCameraPosition();
+    }
+  });
+
+  // --- Render Loop ---
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // --- Resize Handler ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+
+</body>
+</html>
