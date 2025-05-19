@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>UV Grid Emissive Cube</title>
+  <title>UV Grid Emissive Cube with Shadows</title>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -18,6 +18,8 @@
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;               // ENABLE SHADOWS
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow
   document.body.appendChild(renderer.domElement);
 
   // --- Lighting (pure white, no tint) ---
@@ -26,6 +28,11 @@
 
   const pointLight = new THREE.PointLight(0xffffff, 1);
   pointLight.position.set(0, 5, 5);
+  pointLight.castShadow = true;    // Enable shadows from this light
+  pointLight.shadow.mapSize.width = 1024;
+  pointLight.shadow.mapSize.height = 1024;
+  pointLight.shadow.camera.near = 0.5;
+  pointLight.shadow.camera.far = 20;
   scene.add(pointLight);
 
   // --- UV Grid Texture from local PNG file ---
@@ -42,6 +49,7 @@
     })
   );
   cube.position.x = -2;
+  cube.castShadow = true;  // cast shadow
   scene.add(cube);
 
   // --- Sphere ---
@@ -50,6 +58,7 @@
     new THREE.MeshStandardMaterial({ map: uvTexture })
   );
   sphere.position.x = 0;
+  sphere.castShadow = true;  // cast shadow
   scene.add(sphere);
 
   // --- Prism ---
@@ -58,6 +67,7 @@
     new THREE.MeshStandardMaterial({ map: uvTexture })
   );
   prism.position.x = 2;
+  prism.castShadow = true;  // cast shadow
   scene.add(prism);
 
   // --- Ground Plane ---
@@ -67,6 +77,7 @@
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -1;
+  ground.receiveShadow = true;  // receive shadow
   scene.add(ground);
 
   // --- Fake Orbit Camera Control ---
