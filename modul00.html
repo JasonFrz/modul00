@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubus Bergerak Three.js (Tanpa Lighting)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #222; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // 1. Variabel Global
+        let scene, camera, renderer, cube;
+
+        function init() {
+            // 2. Scene (Panggung)
+            scene = new THREE.Scene();
+
+            // 3. Camera (Kamera)
+            // PerspectiveCamera(fov, aspect_ratio, near_clipping_plane, far_clipping_plane)
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5; // Mundurkan kamera agar kubus terlihat
+
+            // 4. Renderer (Perender)
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement); // Tambahkan canvas ke body
+
+            // 5. Geometry (Bentuk Geometris)
+            const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5); // Ukuran kubus 1.5x1.5x1.5
+
+            // 6. Material (Bahan)
+            // MeshBasicMaterial tidak terpengaruh oleh cahaya
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 }); // Warna hijau
+
+            // 7. Mesh (Objek 3D = Geometry + Material)
+            cube = new THREE.Mesh(geometry, material);
+            scene.add(cube); // Tambahkan kubus ke scene
+
+            // Menangani perubahan ukuran window
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Mulai animasi
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); // Loop animasi
+
+            // Animasi: Putar kubus
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+            // cube.rotation.z += 0.005; // Jika ingin berputar pada sumbu Z juga
+
+            // Render scene dengan kamera
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Panggil fungsi init setelah halaman dimuat
+        init();
+    </script>
+</body>
+</html>
