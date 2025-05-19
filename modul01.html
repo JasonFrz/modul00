@@ -1,93 +1,108 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kubus Hierarki Ortogonal Three.js</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #333; } /* Latar belakang sedikit lebih gelap */
-        canvas { display: block; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Three.js Hierarki + Kamera Toggle + Wireframe</title>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #222; }
+    canvas { display: block; }
+    #toggleBtn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      padding: 10px 20px;
+      background: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        // 1. Variabel Global
-        let scene, camera, renderer, parentCube, childCube;
-        const frustumSize = 15; // Ukuran area pandang kamera ortogonal
+  <button id="toggleBtn">Gunakan Kamera Ortografik</button>
+  <canvas id="webglCanvas"></canvas>
 
-        function init() {
-            // 2. Scene (Panggung)
-            scene = new THREE.Scene();
+  <script type="module">
+    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
 
-            // 3. Camera (Kamera Ortogonal)
-            const aspect = window.innerWidth / window.innerHeight;
-            camera = new THREE.OrthographicCamera(
-                frustumSize * aspect / -2, // left
-                frustumSize * aspect / 2,  // right
-                frustumSize / 2,           // top
-                frustumSize / -2,          // bottom
-                1,                         // near clipping plane
-                1000                       // far clipping plane
-            );
-            camera.position.z = 10; // Mundurkan kamera
-            // camera.lookAt(scene.position); // Kamera melihat ke pusat scene (default)
+    const canvas = document.getElementById("webglCanvas");
+    const toggleBtn = document.getElementById("toggleBtn");
 
-            // 4. Renderer (Perender)
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
 
-            // 5. Geometri dan Material (Tanpa Lighting)
-            const parentGeometry = new THREE.BoxGeometry(2, 2, 2); // Kubus induk lebih besar
-            const parentMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 }); // Merah
-            parentCube = new THREE.Mesh(parentGeometry, parentMaterial);
-            scene.add(parentCube); // Tambahkan kubus induk ke scene
+    let useOrtho = false;
+    let camera = createPerspectiveCamera();
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
 
-            const childGeometry = new THREE.BoxGeometry(1, 1, 1); // Kubus anak lebih kecil
-            const childMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff }); // Biru
-            childCube = new THREE.Mesh(childGeometry, childMaterial);
+    function createPerspectiveCamera() {
+      const cam = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      cam.position.z = 10;
+      return cam;
+    }
 
-            // Atur posisi kubus anak RELATIF terhadap kubus induk
-            childCube.position.set(2.5, 0, 0); // Geser ke kanan dari pusat kubus induk
+    function createOrthoCamera() {
+      const aspect = window.innerWidth / window.innerHeight;
+      const d = 5;
+      const cam = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 0.1, 1000);
+      cam.position.z = 10;
+      return cam;
+    }
 
-            // 6. Membuat Hirarki: Tambahkan kubus anak ke kubus induk
-            parentCube.add(childCube);
+    toggleBtn.addEventListener("click", () => {
+      useOrtho = !useOrtho;
+      camera = useOrtho ? createOrthoCamera() : createPerspectiveCamera();
+      handleResize();
+      toggleBtn.textContent = useOrtho ? "Gunakan Kamera Perspektif" : "Gunakan Kamera Ortografik";
+    });
 
-            // Menangani perubahan ukuran window
-            window.addEventListener('resize', onWindowResize, false);
+    // === Hierarki Objek ===
+    const group = new THREE.Group();
 
-            // Mulai animasi
-            animate();
-        }
+    // Parent: kerangka hijau
+    const parentGeo = new THREE.BoxGeometry(2, 2, 2);
+    const parentMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+    const parentCube = new THREE.Mesh(parentGeo, parentMat);
+    group.add(parentCube);
 
-        function animate() {
-            requestAnimationFrame(animate); // Loop animasi
+    // Child: kubus merah solid
+    const childGeo = new THREE.BoxGeometry(1, 1, 1);
+    const childMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const childCube = new THREE.Mesh(childGeo, childMat);
+    childCube.position.set(2.5, 0, 0);
+    group.add(childCube);
 
-            // Animasi kubus induk:
-            parentCube.rotation.x += 0.005;
-            parentCube.rotation.y += 0.01;
+    scene.add(group);
 
-            // Animasi kubus anak (rotasi lokal):
-            childCube.rotation.x += 0.02;
-            childCube.rotation.z += 0.015;
+    function handleResize() {
+      const aspect = window.innerWidth / window.innerHeight;
+      if (camera.isPerspectiveCamera) {
+        camera.aspect = aspect;
+      } else {
+        const d = 5;
+        camera.left = -d * aspect;
+        camera.right = d * aspect;
+        camera.top = d;
+        camera.bottom = -d;
+      }
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
 
-            // Render scene dengan kamera
-            renderer.render(scene, camera);
-        }
+    window.addEventListener("resize", handleResize, false);
+    handleResize();
 
-        function onWindowResize() {
-            const aspect = window.innerWidth / window.innerHeight;
-            camera.left = frustumSize * aspect / -2;
-            camera.right = frustumSize * aspect / 2;
-            camera.top = frustumSize / 2;
-            camera.bottom = frustumSize / -2;
-            camera.updateProjectionMatrix(); // Penting untuk kamera ortogonal setelah diubah
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+    function animate() {
+      requestAnimationFrame(animate);
+      group.rotation.y += 0.01;
+      group.rotation.x += 0.005;
+      renderer.render(scene, camera);
+    }
 
-        // Panggil fungsi init setelah halaman dimuat
-        init();
-    </script>
+    animate();
+  </script>
 </body>
 </html>
