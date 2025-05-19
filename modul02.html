@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>UV Grid Emissive Cube</title>
+  <title>UV Grid Phong Cube, Sphere, Prism</title>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -28,42 +28,49 @@
   pointLight.position.set(0, 5, 5);
   scene.add(pointLight);
 
-  // --- UV Grid Texture from local PNG file ---
+  // --- UV Grid Texture ---
   const loader = new THREE.TextureLoader();
-  const uvTexture = loader.load('uvgrid.png');  // Ganti 'uvgrid.png' sesuai nama file lokalmu
+  const uvTexture = loader.load('uvgrid.png');  // Pastikan file uvgrid.png ada di folder yang sama
 
-  // --- Emissive Cube (soft glow) ---
+  // --- Emissive Cube with Phong Material ---
   const cube = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhongMaterial({
       map: uvTexture,
       emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.4
+      emissiveIntensity: 0.4,
+      shininess: 100
     })
   );
   cube.position.x = -2;
   scene.add(cube);
 
-  // --- Sphere ---
+  // --- Sphere with Phong Material ---
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(0.75, 32, 32),
-    new THREE.MeshStandardMaterial({ map: uvTexture })
+    new THREE.MeshPhongMaterial({
+      map: uvTexture,
+      shininess: 100
+    })
   );
   sphere.position.x = 0;
   scene.add(sphere);
 
-  // --- Prism ---
+  // --- Prism with Phong Material ---
   const prism = new THREE.Mesh(
     new THREE.ConeGeometry(1, 1.5, 3),
-    new THREE.MeshStandardMaterial({ map: uvTexture })
+    new THREE.MeshPhongMaterial({
+      map: uvTexture,
+      shininess: 100
+    })
   );
   prism.position.x = 2;
   scene.add(prism);
 
-  // --- Ground Plane ---
+  // --- Ground Plane (tetap pakai StandardMaterial atau Phong juga) ---
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10),
-    new THREE.MeshStandardMaterial({ map: uvTexture, side: THREE.DoubleSide })
+    new THREE.MeshPhongMaterial({ map: uvTexture, side: THREE.DoubleSide })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -1;

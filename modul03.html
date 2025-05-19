@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>UV Grid Emissive Cube with Shadows</title>
+  <title>UV Grid Phong with Shadows</title>
   <style>
     body { margin: 0; overflow: hidden; }
     canvas { display: block; }
@@ -18,66 +18,67 @@
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.shadowMap.enabled = true;               // ENABLE SHADOWS
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadow
+  renderer.shadowMap.enabled = true; // 🟢 Aktifkan shadow map
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // opsional: soft shadow
   document.body.appendChild(renderer.domElement);
 
-  // --- Lighting (pure white, no tint) ---
+  // --- Lighting ---
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambientLight);
 
   const pointLight = new THREE.PointLight(0xffffff, 1);
   pointLight.position.set(0, 5, 5);
-  pointLight.castShadow = true;    // Enable shadows from this light
+  pointLight.castShadow = true; // 🟢 Lampu bisa melempar bayangan
   pointLight.shadow.mapSize.width = 1024;
   pointLight.shadow.mapSize.height = 1024;
   pointLight.shadow.camera.near = 0.5;
   pointLight.shadow.camera.far = 20;
   scene.add(pointLight);
 
-  // --- UV Grid Texture from local PNG file ---
+  // --- UV Texture ---
   const loader = new THREE.TextureLoader();
-  const uvTexture = loader.load('uvgrid.png');  // Ganti 'uvgrid.png' sesuai nama file lokalmu
+  const uvTexture = loader.load('uvgrid.png');
 
-  // --- Emissive Cube (soft glow) ---
+  // --- Cube ---
   const cube = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshStandardMaterial({
+    new THREE.MeshPhongMaterial({
       map: uvTexture,
       emissive: new THREE.Color(0xffffff),
-      emissiveIntensity: 0.4
+      emissiveIntensity: 0.4,
+      shininess: 100
     })
   );
   cube.position.x = -2;
-  cube.castShadow = true;  // cast shadow
+  cube.castShadow = true; // 🟢 Melempar bayangan
   scene.add(cube);
 
   // --- Sphere ---
   const sphere = new THREE.Mesh(
     new THREE.SphereGeometry(0.75, 32, 32),
-    new THREE.MeshStandardMaterial({ map: uvTexture })
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100 })
   );
   sphere.position.x = 0;
-  sphere.castShadow = true;  // cast shadow
+  sphere.castShadow = true; // 🟢 Melempar bayangan
   scene.add(sphere);
 
   // --- Prism ---
   const prism = new THREE.Mesh(
     new THREE.ConeGeometry(1, 1.5, 3),
-    new THREE.MeshStandardMaterial({ map: uvTexture })
+    new THREE.MeshPhongMaterial({ map: uvTexture, shininess: 100 })
   );
   prism.position.x = 2;
-  prism.castShadow = true;  // cast shadow
+  prism.castShadow = true; // 🟢 Melempar bayangan
   scene.add(prism);
 
   // --- Ground Plane ---
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10),
-    new THREE.MeshStandardMaterial({ map: uvTexture, side: THREE.DoubleSide })
+    new THREE.MeshPhongMaterial({ map: uvTexture, side: THREE.DoubleSide })
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -1;
-  ground.receiveShadow = true;  // receive shadow
+  ground.receiveShadow = true; // 🟢 Menerima bayangan
   scene.add(ground);
 
   // --- Fake Orbit Camera Control ---
